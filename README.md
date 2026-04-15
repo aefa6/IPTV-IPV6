@@ -1,2 +1,2 @@
 # IPTV-IPV6
-显得无聊自己折腾一个ipvt直播源
+闲来无事，自己折腾了一个 [IPv6直播源](https://cdn.jsdelivr.net/gh/aefa6/IPTV@release/tv.m3u)
