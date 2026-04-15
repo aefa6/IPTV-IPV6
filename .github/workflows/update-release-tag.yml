@@ -1,0 +1,56 @@
+name: Auto Release on Push
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get previous tag
+        id: pretag
+        run: |
+          # 获取上一个 release 标签
+          previous_tag=$(git tag --sort=-creatordate | grep -v release | head -n1)
+          echo "previous_tag=$previous_tag" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          # 基于 commit 历史生成更新日志
+          notes=$(git log ${{ steps.pretag.outputs.previous_tag }}..HEAD --pretty=format:"- %s" --no-merges)
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$notes" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update release tag
+        run: |
+          git tag -d release 2>/dev/null || true
+          git push origin :release 2>/dev/null || true
+          git tag release
+          git push origin release
+
+      - name: Create/Update GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: release
+          name: "📦 Latest Auto Release"
+          body: |
+            ## 更新内容
+
+            ${{ steps.notes.outputs.notes }}
+
+            ---
+            *此 Release 由 GitHub Actions 自动更新*
+          makeLatest: true
+          allowUpdates: true
+          removeArtifacts: true
